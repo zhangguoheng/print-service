@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+
+    <springProperty scop="context" name="serviceName" source="spring.application.name" />
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+
+        <!-- encoders are  by default assigned the status
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] | %-5level | %class:%M\(\):%line | - %msg%n</pattern>
+            <!-- 常用的Pattern变量,大家可打开该pattern进行输出观察 -->
+            <!--
+              <pattern>
+                  %d{yyyy-MM-dd HH:mm:ss} [%level] - %msg%n
+                  Logger: %logger
+                  Class: %class
+                  File: %file
+                  Caller: %caller
+                  Line: %line
+                  Message: %m
+                  Method: %M
+                  Relative: %relative
+                  Thread: %thread
+                  Exception: %ex
+                  xException: %xEx
+                  nopException: %nopex
+                  rException: %rEx
+                  Marker: %marker
+                  %n
+              </pattern>
+               -->
+        </encoder>
+    </appender>
+    <!-- 滚动日志 -->
+    <appender name="FILE-ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${LOG_FILE}-all.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] | %-5level | %class:%M\(\):%line | - %msg%n</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/log-all-%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            <!-- keep 30 days' worth of history -->
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>8GB</totalSizeCap>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- or whenever the file size reaches 100MB -->
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+
+    <!-- project default level -->
+    <logger name="com.hyc" level="INFO"/>
+    <logger name="org.springframework.data.mybatis" level="DEBUG"/>
+    <logger name="org.springframework.aop.aspectj" level="ERROR"/>
+    <logger name="org.springframework.data.redis" level="ERROR"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="org.springframework.cache" level="WARN"/>
+    <logger name="javax.activation" level="WARN"/>
+    <logger name="javax.xml.bind" level="WARN"/>
+    <logger name="ch.qos.logback" level="INFO"/>
+    <logger name="com.codahale.metrics" level="WARN"/>
+    <logger name="com.ryantenney" level="WARN"/>
+    <logger name="com.sun" level="WARN"/>
+    <logger name="com.zaxxer" level="WARN"/>
+    <logger name="io.undertow" level="WARN"/>
+    <logger name="io.lettuce.core" level="ERROR"/>
+    <logger name="net.sf.ehcache" level="WARN"/>
+    <logger name="org.apache.juli" level="DEBUG"/>
+    <logger name="org.apache.cxf" level="INFO"/>
+    <logger name="org.apache.http" level="DEBUG"/>
+    <logger name="org.apache.catalina.startup.DigesterFactory" level="OFF"/>
+    <logger name="org.bson" level="WARN"/>
+    <logger name="org.hibernate.validator" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.ejb.HibernatePersistence" level="OFF"/>
+    <logger name="org.thymeleaf" level="WARN"/>
+    <logger name="org.xnio" level="WARN"/>
+    <logger name="springfox" level="WARN"/>
+    <logger name="sun.rmi" level="WARN"/>
+    <logger name="liquibase" level="WARN"/>
+    <logger name="sun.rmi.transport" level="WARN"/>
+    <logger name="jdbc.connection" level="ERROR"/>
+    <logger name="jdbc.resultset" level="ERROR"/>
+    <logger name="jdbc.resultsettable" level="INFO"/>
+    <logger name="jdbc.audit" level="ERROR"/>
+    <logger name="jdbc.sqltiming" level="ERROR"/>
+    <logger name="jdbc.sqlonly" level="INFO"/>
+
+    <root level="${logging.level.root}">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE-ALL"/>
+    </root>
+</configuration>

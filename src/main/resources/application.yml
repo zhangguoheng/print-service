@@ -1,0 +1,16 @@
+#端口号
+server:
+  port: 8816
+  servlet:
+    session:
+      timeout: 30m
+
+
+logging:
+  config: classpath:logging-config.xml
+  level:
+    root: debug
+    com.hyc.printservice: debug
+  file:
+    path: logs
+    name: log.log
