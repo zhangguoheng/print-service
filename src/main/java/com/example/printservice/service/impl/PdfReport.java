@@ -1,5 +1,7 @@
 package com.example.printservice.service.impl;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.extra.qrcode.QrCodeUtil;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -16,9 +18,10 @@ public class PdfReport {
     // main测试
     public static void main(String[] args) throws Exception {
         try {
+            String imgPath = "/root/temp/";
             // 1.新建document对象
             Document document = new Document(PageSize.A4);// 建立一个Document对象
-
+            QrCodeUtil.generate("123321", 300, 300, FileUtil.file(""));
             // 2.建立一个书写器(Writer)与document对象关联
             File file = new File("/root/temp/PDFDemo.pdf");
             file.createNewFile();
