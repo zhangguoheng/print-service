@@ -309,7 +309,7 @@ public class PrintServiceImpl implements PrintService {
     @Override
     public String printPdf(JSONObject body) {
 
-        String no =
+        String no = "";
 
         return null;
     }
