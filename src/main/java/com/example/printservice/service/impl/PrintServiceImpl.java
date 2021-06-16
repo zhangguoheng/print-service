@@ -305,4 +305,14 @@ public class PrintServiceImpl implements PrintService {
         }
         return result.toString();
     }
+
+    @Override
+    public String printPdf(JSONObject body) {
+
+        String no =
+
+        return null;
+    }
+
+
 }

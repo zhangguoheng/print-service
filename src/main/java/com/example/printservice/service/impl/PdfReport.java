@@ -18,10 +18,10 @@ public class PdfReport {
     // main测试
     public static void main(String[] args) throws Exception {
         try {
-            String imgPath = "/root/temp/";
+            String imgPath = "/root/temp/test.jpg";
             // 1.新建document对象
             Document document = new Document(PageSize.A4);// 建立一个Document对象
-            QrCodeUtil.generate("123321", 300, 300, FileUtil.file(""));
+            QrCodeUtil.generate("123321", 300, 300, FileUtil.file(imgPath));
             // 2.建立一个书写器(Writer)与document对象关联
             File file = new File("/root/temp/PDFDemo.pdf");
             file.createNewFile();
@@ -50,6 +50,7 @@ public class PdfReport {
     // 定义全局的字体静态变量
     private static Font titlefont;
     private static Font headfont;
+    private static Font headftextfont;
     private static Font keyfont;
     private static Font textfont;
     // 最大宽度
@@ -62,6 +63,7 @@ public class PdfReport {
             BaseFont bfChinese = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
             titlefont = new Font(bfChinese, 16, Font.BOLD);
             headfont = new Font(bfChinese, 12, Font.BOLD);
+            headftextfont = new Font(bfChinese, 10, Font.NORMAL);
             keyfont = new Font(bfChinese, 8, Font.BOLD);
             textfont = new Font(bfChinese, 8, Font.NORMAL);
 
@@ -83,9 +85,18 @@ public class PdfReport {
         paragraph.setSpacingBefore(5f); //设置段落上空白
         paragraph.setSpacingAfter(10f); //设置段落下空白
 
-        // 直线
-        Paragraph p1 = new Paragraph();
-        p1.add(new Chunk(new LineSeparator()));
+        Paragraph headtext = new Paragraph();
+        headtext.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
+        headtext.setFont(headftextfont);
+        headtext.add(new Chunk("申请人:耿雪诒         "));
+        headtext.add(new Chunk("申请部门:半导体信号         "));
+        headtext.add(new Chunk("申请日期:2021-01-15 20:20"));
+
+        // 添加图片
+        Image image = Image.getInstance("/root/temp/test.jpg");
+        image.setAlignment(Image.ALIGN_RIGHT);
+        image.scalePercent(20); //依照比例缩放
+
 
 
 
@@ -122,7 +133,9 @@ public class PdfReport {
 //        table.addCell(createCell("", textfont));
 
         document.add(paragraph);
-        document.add(p1);
+//        document.add(p1);
+        document.add(image);
+        document.add(headtext);
         document.add(table);
     }
 

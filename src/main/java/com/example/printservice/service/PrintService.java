@@ -5,4 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 public interface PrintService {
 
     String print(JSONObject body);
+
+    String printPdf(JSONObject body);
 }
