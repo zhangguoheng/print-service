@@ -5,6 +5,11 @@ server:
     session:
       timeout: 30m
 
+fileTempPath: /root/temp/
+
+warehouse:
+  one: 102
+
 
 logging:
   config: classpath:logging-config.xml

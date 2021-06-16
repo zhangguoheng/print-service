@@ -29,5 +29,12 @@ public class PrintController {
 
         return printService.print(JSONObject.parseObject(string));
     }
+    @PostMapping(value = "pdfPrint")
+    private String pdfPrint(@RequestBody String body) {
+        log.info("pint:"+body);
+        JSONObject jsonObject = JSONObject.parseObject(body);
+
+        return printService.printPdf(jsonObject);
+    }
 
 }

@@ -1,12 +1,25 @@
 package com.example.printservice.service.impl;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.extra.qrcode.QrCodeUtil;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.example.printservice.Warehouse;
 import com.example.printservice.service.PrintService;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPrintable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.awt.*;
 import java.awt.print.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -14,10 +27,13 @@ import java.util.Date;
 @Slf4j
 public class PrintServiceImpl implements PrintService {
 
+    @Autowired
+    private PdfReport pdfReport;
+    @Value("${fileTempPath}")
+    String fileTempPath;
+    @Autowired
+    private Warehouse warehouse;
 
-    public static void main(String[] args) {
-        new PrintServiceImpl().printA4("张国衡", "001154", "123123", "午餐", "员工");
-    }
     private boolean printA4(String name, String code, String no, String mealType, String type) {
         if (PrinterJob.lookupPrintServices().length > 0) {
             /*
@@ -129,7 +145,6 @@ public class PrintServiceImpl implements PrintService {
         return false;
 
     }
-
 
 
     private boolean printDefault(String name, String code, String no, String mealType, String type) {
@@ -308,10 +323,74 @@ public class PrintServiceImpl implements PrintService {
 
     @Override
     public String printPdf(JSONObject body) {
+        JSONObject result = new JSONObject();
+        String formNo = body.getString("formNo");
+        JSONArray kus = body.getJSONArray("kus");
+        for (int i = 0; i < kus.size(); i++) {
+            if (pdf(formNo, kus.getString(i), body)) {
+                result.put("result", 1);
+                result.put("resultInfo", "成功");
+            } else {
+                result.put("result", 0);
+                result.put("resultInfo", "失败");
+                return result.toJSONString();
+            }
+        }
+        return result.toJSONString();
+    }
 
-        String no = "";
+    private boolean pdf(String formNo, String wareHouseId, JSONObject body) {
 
-        return null;
+        try {
+            String imgPath = fileTempPath + File.separator + formNo + "_" + wareHouseId + ".jpg";
+            // 1.新建document对象
+            Document document = new Document(PageSize.A4);// 建立一个Document对象
+            QrCodeUtil.generate(formNo, 300, 300, FileUtil.file(imgPath));
+            // 2.建立一个书写器(Writer)与document对象关联
+            String pdfPath = fileTempPath + File.separator + formNo + "_" + wareHouseId + ".pdf";
+            File file = new File(pdfPath);
+
+            file.createNewFile();
+            PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(file));
+            writer.setPageEvent(new Watermark("HYC"));// 水印
+            writer.setPageEvent(new MyHeaderFooter());// 页眉/页脚
+            // 3.打开文档
+            document.open();
+            document.addTitle("免费领料点");// 标题
+            document.addAuthor("zhanggh@hyc.cn");// 作者
+            document.addSubject("Subject@iText pdf sample");// 主题
+            document.addKeywords("");// 关键字
+            document.addCreator("");// 创建者
+            // 4.向文档中添加内容
+            new PdfReport().generatePDF(document, body, imgPath, wareHouseId);
+            // 5.关闭文档
+            document.close();
+
+            PDDocument document1 = PDDocument.load(file);
+            // 加载成打印文件
+            PDFPrintable printable = new PDFPrintable(document1);
+            javax.print.PrintService[] printServices = PrinterJob.lookupPrintServices();
+            javax.print.PrintService ps = null;
+            for (int i = 0; i < printServices.length; i++) {
+                javax.print.PrintService printService = printServices[i];
+                log.info(printService.getName());
+                if (wareHouseId.equals(printService.getName())) {
+                    ps = printService;
+                    break;
+                }
+            }
+            PrinterJob job = PrinterJob.getPrinterJob();
+            if (ps == null) {
+                job.setPrintService(ps);
+            }
+            job.setPrintable(printable);
+            job.print();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
     }
 
 

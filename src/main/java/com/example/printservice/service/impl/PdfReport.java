@@ -2,6 +2,8 @@ package com.example.printservice.service.impl;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -9,11 +11,14 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.DottedLineSeparator;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileOutputStream;
-
+@Service
 public class PdfReport {
+
 
     // main测试
     public static void main(String[] args) throws Exception {
@@ -38,7 +43,7 @@ public class PdfReport {
             document.addCreator("Creator@umiz`s");// 创建者
 
             // 4.向文档中添加内容
-            new PdfReport().generatePDF(document);
+            new PdfReport().generatePDF(document,new JSONObject(),imgPath,"");
 
             // 5.关闭文档
             document.close();
@@ -46,6 +51,8 @@ public class PdfReport {
             e.printStackTrace();
         }
     }
+
+
 
     // 定义全局的字体静态变量
     private static Font titlefont;
@@ -73,7 +80,7 @@ public class PdfReport {
     }
 
     // 生成PDF文件
-    public void generatePDF(Document document) throws Exception {
+    public void generatePDF(Document document, JSONObject body,String imgPath,String warehouseId) throws Exception {
 
         // 段落
         Paragraph paragraph = new Paragraph("苏州华兴源创科技股份有限公司", titlefont);
@@ -88,14 +95,43 @@ public class PdfReport {
         Paragraph headtext = new Paragraph();
         headtext.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
         headtext.setFont(headftextfont);
-        headtext.add(new Chunk("申请人:耿雪诒         "));
-        headtext.add(new Chunk("申请部门:半导体信号         "));
-        headtext.add(new Chunk("申请日期:2021-01-15 20:20"));
+        headtext.add(new Chunk("申请人:"+body.getString("name")+"         "));
+        headtext.add(new Chunk("申请部门:"+body.getString("bmName")+"         "));
+        headtext.add(new Chunk("申请日期:"+body.getString("datetime")));
 
+        Paragraph headtext2 = new Paragraph();
+        headtext2.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
+        headtext2.setFont(headftextfont);
+        headtext2.add(new Chunk("申请单号:"+body.getString("fromNo")+"         "));
+        headtext2.add(new Chunk("单据类型:"+body.getString("type")+"         "));
+        headtext2.add(new Chunk("账号别名:"+body.getString("account")));
+
+        Paragraph headtext3 = new Paragraph();
+        headtext3.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
+        headtext3.setFont(headftextfont);
+        headtext3.add(new Chunk("备注:"+body.getString("remarks")+"         "));
+        headtext3.add(new Chunk("账户别名描述:"+body.getString("accountName")+"         "));
+        headtext3.add(new Chunk(""));
         // 添加图片
-        Image image = Image.getInstance("/root/temp/test.jpg");
+        Image image = Image.getInstance(imgPath);
         image.setAlignment(Image.ALIGN_RIGHT);
         image.scalePercent(20); //依照比例缩放
+
+        Paragraph headtext4 = new Paragraph();
+        headtext4.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
+        headtext4.setFont(headftextfont);
+        headtext4.add(new Chunk("审批:"+body.getString("approve")+"         "));
+
+        Paragraph headtext5 = new Paragraph();
+        headtext5.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
+        headtext5.setFont(headftextfont);
+        headtext5.add(new Chunk("领料人:                    "));
+        headtext5.add(new Chunk("仓管员:                    "));
+        headtext5.add(new Chunk("操作时间:                    "));
+
+        // 直线
+        Paragraph p1 = new Paragraph();
+        p1.add(new Chunk(new LineSeparator()));
 
 
 
@@ -113,16 +149,18 @@ public class PdfReport {
         table.addCell(createCell("货位", keyfont, Element.ALIGN_CENTER));
         table.addCell(createCell("单位", keyfont, Element.ALIGN_CENTER));
         Integer totalQuantity = 0;
-        for (int i = 0; i < 5; i++) {
-            table.addCell(createCell("A001A001-BD-2003066-01", textfont));
-            table.addCell(createCell("2003066-01HYC_ET32_转塔式", textfont));
-            table.addCell(createCell("AA-02-01-94772-N", textfont));
-            table.addCell(createCell("加工品；RING SUPPORT Z INDE.ET32 V2；HYC969-10-073", textfont));
-            table.addCell(createCell("1", textfont));
-            table.addCell(createCell("2", textfont));
-            table.addCell(createCell("201", textfont));
-            table.addCell(createCell("201-E-011-145.A001A001-BD-2003066-01.20", textfont));
-            table.addCell(createCell("pcs", textfont));
+        JSONArray rows = body.getJSONObject("rowMap").getJSONArray(warehouseId);
+        for (int i = 0; i < rows.size(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            table.addCell(createCell(row.getString("project"), textfont));
+            table.addCell(createCell(row.getString("projectName"), textfont));
+            table.addCell(createCell(row.getString("code"), textfont));
+            table.addCell(createCell(row.getString("name"), textfont));
+            table.addCell(createCell(row.getString("count"), textfont));
+            table.addCell(createCell("", textfont));
+            table.addCell(createCell(row.getString("space"), textfont));
+            table.addCell(createCell(row.getString("warehouse"), textfont));
+            table.addCell(createCell(row.getString("unit"), textfont));
             totalQuantity++;
         }
 //        table.addCell(createCell("总计", keyfont));
