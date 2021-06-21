@@ -11,14 +11,15 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.DottedLineSeparator;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileOutputStream;
 @Service
+@Slf4j
 public class PdfReport {
-
 
     // main测试
     public static void main(String[] args) throws Exception {
@@ -31,7 +32,7 @@ public class PdfReport {
             File file = new File("/root/temp/PDFDemo.pdf");
             file.createNewFile();
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(file));
-            writer.setPageEvent(new Watermark("HYC 华兴源创"));// 水印
+            writer.setPageEvent(new Watermark("HYC"));// 水印
             writer.setPageEvent(new MyHeaderFooter());// 页眉/页脚
 
             // 3.打开文档
@@ -43,7 +44,7 @@ public class PdfReport {
             document.addCreator("Creator@umiz`s");// 创建者
 
             // 4.向文档中添加内容
-            new PdfReport().generatePDF(document,new JSONObject(),imgPath,"");
+//            new PdfReport().generatePDF(document,new JSONObject(),imgPath,null,"");
 
             // 5.关闭文档
             document.close();
@@ -67,12 +68,7 @@ public class PdfReport {
     static {
         try {
             // 不同字体（这里定义为同一种字体：包含不同字号、不同style）
-            BaseFont bfChinese = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
-            titlefont = new Font(bfChinese, 16, Font.BOLD);
-            headfont = new Font(bfChinese, 12, Font.BOLD);
-            headftextfont = new Font(bfChinese, 10, Font.NORMAL);
-            keyfont = new Font(bfChinese, 8, Font.BOLD);
-            textfont = new Font(bfChinese, 8, Font.NORMAL);
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,8 +76,14 @@ public class PdfReport {
     }
 
     // 生成PDF文件
-    public void generatePDF(Document document, JSONObject body,String imgPath,String warehouseId) throws Exception {
-
+    public void generatePDF(Document document, JSONObject body,String imgPath,JSONArray rows,String ttfPath) throws Exception {
+        log.info("--------ttf:"+ttfPath);
+        BaseFont bfChinese = BaseFont.createFont(ttfPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+        titlefont = new Font(bfChinese, 16, Font.BOLD);
+        headfont = new Font(bfChinese, 12, Font.BOLD);
+        headftextfont = new Font(bfChinese, 10, Font.NORMAL);
+        keyfont = new Font(bfChinese, 8, Font.BOLD);
+        textfont = new Font(bfChinese, 8, Font.NORMAL);
         // 段落
         Paragraph paragraph = new Paragraph("苏州华兴源创科技股份有限公司", titlefont);
         paragraph.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
@@ -92,53 +94,35 @@ public class PdfReport {
         paragraph.setSpacingBefore(5f); //设置段落上空白
         paragraph.setSpacingAfter(10f); //设置段落下空白
 
-        Paragraph headtext = new Paragraph();
-        headtext.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
-        headtext.setFont(headftextfont);
-        headtext.add(new Chunk("申请人:"+body.getString("name")+"         "));
-        headtext.add(new Chunk("申请部门:"+body.getString("bmName")+"         "));
-        headtext.add(new Chunk("申请日期:"+body.getString("datetime")));
 
-        Paragraph headtext2 = new Paragraph();
-        headtext2.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
-        headtext2.setFont(headftextfont);
-        headtext2.add(new Chunk("申请单号:"+body.getString("fromNo")+"         "));
-        headtext2.add(new Chunk("单据类型:"+body.getString("type")+"         "));
-        headtext2.add(new Chunk("账号别名:"+body.getString("account")));
-
-        Paragraph headtext3 = new Paragraph();
-        headtext3.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
-        headtext3.setFont(headftextfont);
-        headtext3.add(new Chunk("备注:"+body.getString("remarks")+"         "));
-        headtext3.add(new Chunk("账户别名描述:"+body.getString("accountName")+"         "));
-        headtext3.add(new Chunk(""));
         // 添加图片
         Image image = Image.getInstance(imgPath);
         image.setAlignment(Image.ALIGN_RIGHT);
         image.scalePercent(20); //依照比例缩放
 
-        Paragraph headtext4 = new Paragraph();
-        headtext4.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
-        headtext4.setFont(headftextfont);
-        headtext4.add(new Chunk("审批:"+body.getString("approve")+"         "));
-
-        Paragraph headtext5 = new Paragraph();
-        headtext5.setAlignment(1); //设置文字居中 0靠左   1，居中     2，靠右
-        headtext5.setFont(headftextfont);
-        headtext5.add(new Chunk("领料人:                    "));
-        headtext5.add(new Chunk("仓管员:                    "));
-        headtext5.add(new Chunk("操作时间:                    "));
-
-        // 直线
-        Paragraph p1 = new Paragraph();
-        p1.add(new Chunk(new LineSeparator()));
-
+        String remarks = body.getString("remarks");
 
 
 
         // 表格
-        PdfPTable table = createTable(new float[]{40, 60, 60, 60, 20, 20,20,30,30});
-        table.addCell(createCell("物料明细", headfont, Element.ALIGN_CENTER, 9, false));
+        PdfPTable table = createTable(new float[]{50, 50, 50, 60, 20, 20,20,40,20});
+        table.addCell(createCell("申请人:", headftextfont, Element.ALIGN_RIGHT, 1));
+        table.addCell(createCell(body.getString("name"), headftextfont, Element.ALIGN_LEFT, 1));
+        table.addCell(createCell("申请部门:", headftextfont, Element.ALIGN_RIGHT, 1));
+        table.addCell(createCell(body.getString("bmName"), headftextfont, Element.ALIGN_LEFT, 1));
+        table.addCell(createCell("申请日期:", headftextfont, Element.ALIGN_RIGHT, 3));
+        table.addCell(createCell(body.getString("datetime"), headftextfont, Element.ALIGN_LEFT, 2));
+        table.addCell(createCell("申请单号:", headftextfont, Element.ALIGN_RIGHT, 1));
+        table.addCell(createCell(body.getString("fromNo"), headftextfont, Element.ALIGN_LEFT, 1));
+        table.addCell(createCell("单据类型:", headftextfont, Element.ALIGN_RIGHT, 1));
+        table.addCell(createCell(body.getString("type"), headftextfont, Element.ALIGN_LEFT, 1));
+        table.addCell(createCell("账号别名:", headftextfont, Element.ALIGN_RIGHT, 3));
+        table.addCell(createCell(body.getString("account"), headftextfont, Element.ALIGN_LEFT, 2));
+        table.addCell(createCell("备注:", headftextfont, Element.ALIGN_RIGHT, 1));
+        table.addCell(createCell(remarks==null?"":remarks, headftextfont, Element.ALIGN_LEFT, 3));
+        table.addCell(createCell("账户别名描述:", headftextfont, Element.ALIGN_RIGHT, 3));
+        table.addCell(createCell(body.getString("accountName"), headftextfont, Element.ALIGN_LEFT, 2));
+        table.addCell(createCell("物料明细", headfont, Element.ALIGN_CENTER, 9));
         table.addCell(createCell("项目号", keyfont, Element.ALIGN_CENTER));
         table.addCell(createCell("项目描述", keyfont, Element.ALIGN_CENTER));
         table.addCell(createCell("物料编号", keyfont, Element.ALIGN_CENTER));
@@ -148,8 +132,6 @@ public class PdfReport {
         table.addCell(createCell("仓库", keyfont, Element.ALIGN_CENTER));
         table.addCell(createCell("货位", keyfont, Element.ALIGN_CENTER));
         table.addCell(createCell("单位", keyfont, Element.ALIGN_CENTER));
-        Integer totalQuantity = 0;
-        JSONArray rows = body.getJSONObject("rowMap").getJSONArray(warehouseId);
         for (int i = 0; i < rows.size(); i++) {
             JSONObject row = rows.getJSONObject(i);
             table.addCell(createCell(row.getString("project"), textfont));
@@ -158,22 +140,21 @@ public class PdfReport {
             table.addCell(createCell(row.getString("name"), textfont));
             table.addCell(createCell(row.getString("count"), textfont));
             table.addCell(createCell("", textfont));
-            table.addCell(createCell(row.getString("space"), textfont));
             table.addCell(createCell(row.getString("warehouse"), textfont));
+            table.addCell(createCell(row.getString("space"), textfont));
             table.addCell(createCell(row.getString("unit"), textfont));
-            totalQuantity++;
         }
-//        table.addCell(createCell("总计", keyfont));
-//        table.addCell(createCell("", textfont));
-//        table.addCell(createCell("", textfont));
-//        table.addCell(createCell("", textfont));
-//        table.addCell(createCell(String.valueOf(totalQuantity) + "件事", textfont));
-//        table.addCell(createCell("", textfont));
-
+        table.addCell(createCell("审批:", headftextfont,2,1));
+        String approve=body.getString("approve");
+        table.addCell(createCell(approve==null?"":approve, headftextfont,0,8));
+        table.addCell(createCell("领料人:", headftextfont, Element.ALIGN_RIGHT, 1, false));
+        table.addCell(createCell("", headftextfont, Element.ALIGN_LEFT, 1, false));
+        table.addCell(createCell("仓管员:", headftextfont, Element.ALIGN_RIGHT, 1, false));
+        table.addCell(createCell("", headftextfont, Element.ALIGN_LEFT, 1, false));
+        table.addCell(createCell("操作时间:", headftextfont, Element.ALIGN_RIGHT, 2, false));
+        table.addCell(createCell("", headftextfont, Element.ALIGN_LEFT, 3, false));
         document.add(paragraph);
-//        document.add(p1);
         document.add(image);
-        document.add(headtext);
         document.add(table);
     }
 

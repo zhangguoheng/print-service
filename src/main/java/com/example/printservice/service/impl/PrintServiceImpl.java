@@ -12,6 +12,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.printing.PDFPrintable;
+import org.apache.pdfbox.printing.Scaling;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -33,6 +35,9 @@ public class PrintServiceImpl implements PrintService {
     String fileTempPath;
     @Autowired
     private Warehouse warehouse;
+
+    @Value("${ttfPath}")
+    private String ttfPath;
 
     private boolean printA4(String name, String code, String no, String mealType, String type) {
         if (PrinterJob.lookupPrintServices().length > 0) {
@@ -324,10 +329,12 @@ public class PrintServiceImpl implements PrintService {
     @Override
     public String printPdf(JSONObject body) {
         JSONObject result = new JSONObject();
-        String formNo = body.getString("formNo");
-        JSONArray kus = body.getJSONArray("kus");
-        for (int i = 0; i < kus.size(); i++) {
-            if (pdf(formNo, kus.getString(i), body)) {
+        String formNo = body.getString("fromNo");
+        JSONObject wJSON = warehouse.toJSON();
+        Set<String> wKeys = wJSON.keySet();
+        for (String wKey : wKeys) {
+            log.info("-----------------:" + wKey);
+            if (pdf(formNo, wKey, body, wJSON.getJSONArray(wKey))) {
                 result.put("result", 1);
                 result.put("resultInfo", "成功");
             } else {
@@ -336,10 +343,14 @@ public class PrintServiceImpl implements PrintService {
                 return result.toJSONString();
             }
         }
+        for (int i = 0; i < wKeys.size(); i++) {
+
+
+        }
         return result.toJSONString();
     }
 
-    private boolean pdf(String formNo, String wareHouseId, JSONObject body) {
+    private boolean pdf(String formNo, String wareHouseId, JSONObject body, JSONArray kus) {
 
         try {
             String imgPath = fileTempPath + File.separator + formNo + "_" + wareHouseId + ".jpg";
@@ -361,19 +372,29 @@ public class PrintServiceImpl implements PrintService {
             document.addSubject("Subject@iText pdf sample");// 主题
             document.addKeywords("");// 关键字
             document.addCreator("");// 创建者
+            JSONArray rows = new JSONArray();
             // 4.向文档中添加内容
-            new PdfReport().generatePDF(document, body, imgPath, wareHouseId);
+            JSONArray jsonArray = body.getJSONArray("kus");
+            for (int i = 0; i < jsonArray.size(); i++) {
+                String ku = jsonArray.getString(i);
+                if (kus.contains(ku)) {
+                    rows.addAll(body.getJSONObject("rowMap").getJSONArray(ku));
+                }
+            }
+            new PdfReport().generatePDF(document, body, imgPath, rows, ttfPath);
             // 5.关闭文档
             document.close();
 
             PDDocument document1 = PDDocument.load(file);
+            log.info("需要打印机："+wareHouseId);
             // 加载成打印文件
-            PDFPrintable printable = new PDFPrintable(document1);
+            PDFPrintable printable = new PDFPrintable(document1, Scaling.ACTUAL_SIZE);
+
             javax.print.PrintService[] printServices = PrinterJob.lookupPrintServices();
             javax.print.PrintService ps = null;
             for (int i = 0; i < printServices.length; i++) {
                 javax.print.PrintService printService = printServices[i];
-                log.info(printService.getName());
+                log.info("打印机："+printService.getName());
                 if (wareHouseId.equals(printService.getName())) {
                     ps = printService;
                     break;
